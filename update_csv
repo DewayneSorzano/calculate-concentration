@@ -1,0 +1,103 @@
+"""
+Author: Dewayne Sorzano
+Note: This is meant to run before running
+Calc_Concentration_script as this prepares the csv
+files for use in arcpy functions.
+
+The purpose of this code is to take a csv file from
+the Environmental Protection Agency, find the year it
+represents, and save the csv with the year in the format
+CA_PM_YEAR.
+
+Steps
+1. Put all the files within the user folder into a list
+2. Take 1 file from the list and read it
+3. Get the year from the csv file
+4. Save the file with the year included in format
+   # CA_PM_YEAR
+"""
+
+import csv
+import arcpy
+import glob
+
+# 1. Put all the files within the user folder into a list
+# Place at least 2 of the downloaded EPA files into a folder
+# and add the folder's path to the path variable below
+path = ""
+
+# This will get all files within the path that are unedited csv files
+# and put them into a list
+file_names = glob.glob(path + "*ad_viz_plotval_data*.csv")
+
+# Check to see if there are csv files to use
+if not file_names:
+    print("There are no valid csv files in this folder.")
+
+else:
+    """key1 contains the name of the columns we want to
+    extract from the csv file
+    value1 are the column names we want to have for the
+    edited csv"""
+    key1 = ['Date', 'Daily Mean PM2.5 Concentration',
+            'Units', 'Daily AQI Value', 'Local Site Name',
+            'Site Latitude', 'Site Longitude']
+    value1 = ['Date', 'Concentration', 'Units',
+              'AQI', 'Name', 'Latitude', 'Longitude']
+
+    print("Current files\n" + str(file_names))
+    arcpy.AddMessage("Current files\n" + str(file_names))
+    year_list = []
+    # 2. Take 1 file from the list and read it
+
+    for item in file_names:
+
+        with open(item, "r") as csv_file:
+
+            csv_reader = csv.reader(csv_file)
+            # next() allows us to skip the 1st line of the csv file
+            # which is the header
+            next(csv_reader)
+
+            # 3. Get the year from the csv file
+
+            for line in csv_reader:
+                # line is a list so we can use list ideology
+                """this format takes the first column of the csv
+                and the last 4 letters from that column which is
+                the year"""
+                year = line[0][-4:]
+                print(f"The year of this file is {year}")
+                arcpy.AddMessage(f"The year of this file is {year}")
+                year_list.append(year)
+                # We only need the year once so we break
+                break
+            print(f"After looping the year is {year}")
+            arcpy.AddMessage(f"After looping the year is {year}")
+
+        # 4. Save the file with the year included in format
+        # CA_PM_YEAR
+        """We will have to write the contents of the file 
+        into a new csv.  Make sure to open the file in
+        the path so it is saved in the same spot as 
+        the unedited files"""
+        with open(item, "r") as csv_file2:
+            # newline= '' makes it so that when the file is
+            # written it will not have erroneous blank spaces
+            # between entries
+            with open(f'{path}CA_PM_{year}.csv', 'w', newline='') as new_file:
+                fieldnames = key1
+                csv_reader2 = csv.DictReader(csv_file2)
+                csv_writer = csv.DictWriter(new_file, fieldnames=fieldnames,
+                                            extrasaction='ignore')
+
+                """zip combines the 2 arguments and make it into a single tuple
+                both key1 and key2 are lists so they will be turned into a tuple 
+                of 2 separate lists
+                dict turns the argument into a dictionary, this way we can match
+                the format of writerow and DictWriter
+                (key:value) where key is key1, value is value1."""
+                csv_writer.writerow(dict(zip(key1, value1)))
+
+                for entry in csv_reader2:
+                    csv_writer.writerow(entry)
