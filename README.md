@@ -1,6 +1,11 @@
 # calculate-concentration
 Environmental Protection Agency website link 
 https://www.epa.gov/outdoor-air-quality-data/download-daily-data
+Pollutant: PM2.5
+Year: Any 2 years you wish to study
+Geographic Area: California
+Monitor Site: All Sites
+Get Data (Will download a csv file)
 
 This repository allows a user to take California PM2.5 air quality data from the Environmental Protection Agency website and create a map showcasing the average concentration calculated from two years.
 This repository contains two python files.  One is called update_csv, the other Calc_Concentration_script.  update_csv's purpose is to take the csv data downloaded from the EPA website (linked above) and 
