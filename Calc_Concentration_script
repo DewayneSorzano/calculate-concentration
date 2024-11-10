@@ -78,7 +78,6 @@ def Model(Previous_Year=previous_yr_csv, Latest_Year=latest_yr_csv,
     # Process: Export Table (3) (Export Table) (conversion)
     # Then export the joined table.
     CA_Conc = output_space + f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
-    # Remember, you don't need to use field_mapping
     arcpy.conversion.ExportTable(in_table=CA_prev_Jt, out_table=CA_Conc)
 
     # Process: Remove Join (Remove Join) (management)
