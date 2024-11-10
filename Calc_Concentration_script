@@ -7,9 +7,9 @@ A digital elevation raster file of the state
 Purpose: This code can be used to calculate the average PM.2.5 concentration of a state from one year to another.
 """
 
+
 import arcpy
 from sys import argv
-
 
 # workspace should be the path the csv files are stored in
 # output_space should be the path the arcGIS project is in
@@ -23,7 +23,9 @@ lat_year_value = "2019"
 previous_yr_csv = workspace + f"CA_PM_{prev_year_value}.csv"
 latest_yr_csv = workspace + f"CA_PM_{lat_year_value}.csv"
 
-def Model(Previous_Year=previous_yr_csv, Latest_Year=latest_yr_csv, Digital_Elevation_Model="dem_30m_ca"):  # Calculate Concentration
+
+def Model(Previous_Year=previous_yr_csv, Latest_Year=latest_yr_csv,
+          Digital_Elevation_Model="dem_30m_ca"):  # Calculate Concentration
 
     # To allow overwriting outputs change overwriteOutput option to True.
     arcpy.env.overwriteOutput = True
@@ -36,103 +38,109 @@ def Model(Previous_Year=previous_yr_csv, Latest_Year=latest_yr_csv, Digital_Elev
 
     arcpy.ImportToolbox(r"c:\program files\arcgis\pro\Resources\ArcToolbox\toolboxes\Data Management Tools.tbx")
     California_Counties = "California_Counties"
-    California_Counties_3_ = "California_Counties"
+
 
     # Process: Export Table (Export Table) (conversion)
-    CA_PM_prev_ExportTable = output_space+f"CA_PM_{prev_year_value}_Table"
+    # Export the table prepared from update_csv for the previous year.
+    CA_prev_ET = output_space + f"CA_PM_{prev_year_value}_Table"
     
     arcpy.conversion.ExportTable(
         in_table=Previous_Year.__str__().format(**locals(), **globals()) if isinstance(Previous_Year,
                                                                                        str) else Previous_Year,
-        out_table=CA_PM_prev_ExportTable)
+        out_table=CA_prev_ET)
     # Process: Summary Statistics (Summary Statistics) (analysis)
-    CA_PM_prev_Export_Statistics = output_space+f"CA_PM_{prev_year_value}_Statistics"
-    arcpy.analysis.Statistics(in_table=CA_PM_prev_ExportTable, out_table=CA_PM_prev_Export_Statistics,
+    # Convert the mean concentration values for the year and
+    # categorize it by the air quality station name.
+    CA_prev_ES = output_space + f"CA_PM_{prev_year_value}_Statistics"
+    arcpy.analysis.Statistics(in_table=CA_prev_ET, out_table=CA_prev_ES,
                               statistics_fields=[["Concentration", "MEAN"], ["Latitude", "MEAN"],
                                                  ["Longitude", "MEAN"]], case_field=["Name"])
+
     # Process: Export Table (2) (Export Table) (conversion)
-    CA_PM_lat_ExportTable = output_space+f"CA_PM_{lat_year_value}_Table"
+    # Perform the same process for the later year.
+    CA_lat_ET = output_space + f"CA_PM_{lat_year_value}_Table"
     arcpy.conversion.ExportTable(
         in_table=Latest_Year.__str__().format(**locals(), **globals()) if isinstance(Latest_Year, str) else Latest_Year,
-        out_table=CA_PM_lat_ExportTable)
+        out_table=CA_lat_ET)
 
     # Process: Summary Statistics (2) (Summary Statistics) (analysis)
-    CA_PM_lat_Export_Statistics = output_space+f"CA_PM_{lat_year_value}_Statistics"
-    arcpy.analysis.Statistics(in_table=CA_PM_lat_ExportTable, out_table=CA_PM_lat_Export_Statistics,
+    CA_lat_ES = output_space + f"CA_PM_{lat_year_value}_Statistics"
+    arcpy.analysis.Statistics(in_table=CA_lat_ET, out_table=CA_lat_ES,
                               statistics_fields=[["Concentration", "MEAN"], ["Latitude", "MEAN"],
                                                  ["Longitude", "MEAN"]], case_field=["Name"])
 
     # Process: Add Join (Add Join) (management)
-    CA_PM_prev_Export_Statistics_2_ = \
-    arcpy.management.AddJoin(in_layer_or_view=CA_PM_prev_Export_Statistics, in_field="Name",
-                             join_table=CA_PM_lat_Export_Statistics, join_field="Name")[0]
+    # Join the 2 tables together.
+    CA_prev_Jt = \
+        arcpy.management.AddJoin(in_layer_or_view=CA_prev_ES, in_field="Name",
+                                 join_table=CA_lat_ES, join_field="Name")[0]
 
     # Process: Export Table (3) (Export Table) (conversion)
-    CA_PM_Conc = output_space+f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
+    # Then export the joined table.
+    CA_Conc = output_space + f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
     # Remember, you don't need to use field_mapping
-    arcpy.conversion.ExportTable(in_table=CA_PM_prev_Export_Statistics_2_, out_table=CA_PM_Conc)
+    arcpy.conversion.ExportTable(in_table=CA_prev_Jt, out_table=CA_Conc)
 
     # Process: Remove Join (Remove Join) (management)
-    if CA_PM_Conc:
-        CA_PM_prev_Export_Statistics_2_CA_PM_prev_Export_Statistics = \
-        arcpy.management.RemoveJoin(in_layer_or_view=CA_PM_prev_Export_Statistics_2_,
+    if CA_Conc:
+        arcpy.management.RemoveJoin(in_layer_or_view=CA_prev_Jt,
                                     join_name=f"CA_PM_{lat_year_value}_Statistics")[0]
 
         # Process: Add Field (Add Field) (management)
-        CA_PM = arcpy.management.AddField(in_table=CA_PM_Conc, field_name="PM_Concentration", field_type="DOUBLE")[0]
+        CA_PM = arcpy.management.AddField(in_table=CA_Conc, field_name="PM_Concentration", field_type="DOUBLE")[0]
 
         # Process: Calculate Field (Calculate Field) (management)
-        CA_PM_Conc_2_ = arcpy.management.CalculateField(in_table=CA_PM, field="PM_Concentration",
-                                                        expression="(!MEAN_Concentration! + !MEAN_Concentration_1!)   / 2")[
-            0]
+        CA_PM_Cf = arcpy.management.CalculateField(in_table=CA_PM, field="PM_Concentration",
+                                                   expression=
+                                                   "(!MEAN_Concentration! + !MEAN_Concentration_1!)   / 2")[0]
 
         # Process: Delete Field (Delete Field) (management)
-        CA_PM_Conc_3_ = arcpy.management.DeleteField(in_table=CA_PM_Conc_2_,
-                                                     drop_field=["FREQUENCY", "MEAN_Concentration", "OBJECTID_1",
-                                                                 "Name_1", "FREQUENCY_1",
-                                                                 "MEAN_Concentration_1", "MEAN_Latitude_1",
-                                                                 "MEAN_Longitude_1"])[0]
+        CA_PM_Df = arcpy.management.DeleteField(in_table=CA_PM_Cf,
+                                                drop_field=["FREQUENCY", "MEAN_Concentration", "OBJECTID_1",
+                                                            "Name_1", "FREQUENCY_1",
+                                                            "MEAN_Concentration_1", "MEAN_Latitude_1",
+                                                            "MEAN_Longitude_1"])[0]
 
         # Process: XY Table To Point (XY Table To Point) (management)
-        # put both previous year and latest year so each entry is unique based
-        # on the years you use
-        Output_Feature_Class = output_space+f"CA_PM_Conc_{prev_year_value}_{lat_year_value}Points"
-        arcpy.management.XYTableToPoint(in_table=CA_PM_Conc_3_, out_feature_class=Output_Feature_Class,
+        Output_Feature_Class = output_space + f"CA_PM_Conc_{prev_year_value}_{lat_year_value}Points"
+        arcpy.management.XYTableToPoint(in_table=CA_PM_Df, out_feature_class=Output_Feature_Class,
                                         x_field="MEAN_Longitude", y_field="MEAN_Latitude",
                                         coordinate_system="GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]];-400 -400 1000000000;-100000 10000;-100000 10000;8.98315284119521E-09;0.001;0.001;IsHighPrecision")
 
         # Process: Extract Multi Values to Points (Extract Multi Values to Points) (sa)
-        # removed .save(Extract_Multi_Values_to_Points), may cause issues later
-        CA_PM_Conc_XYTableToPoint = arcpy.sa.ExtractMultiValuesToPoints(Output_Feature_Class,
-                                                                        [[Digital_Elevation_Model, "Elevation"]],
-                                                                        "NONE")
+        
+        CA_PM_Conc_XY = arcpy.sa.ExtractMultiValuesToPoints(Output_Feature_Class,
+                                                            [[Digital_Elevation_Model, "Elevation"]],
+                                                            "NONE")
 
         # Process: IDW (IDW) (sa)
-        IDW_CA_PM = output_space+f"IDWCA{prev_year_value}_{lat_year_value}"
+        IDW_CA_PM = output_space + f"IDWCA{prev_year_value}_{lat_year_value}"
         IDW = IDW_CA_PM
         with arcpy.EnvManager(
-                mask=output_space+"California_Counties"):
-            IDW_CA_PM = arcpy.sa.Idw(CA_PM_Conc_XYTableToPoint, "PM_Concentration", "3.48816000000002E-02", 2,
+                mask=output_space + "California_Counties"):
+            IDW_CA_PM = arcpy.sa.Idw(CA_PM_Conc_XY, "PM_Concentration", "3.48816000000002E-02", 2,
                                      "VARIABLE 12", "")
             IDW_CA_PM.save(IDW)
 
         # Process: Zonal Statistics as Table (Zonal Statistics as Table) (sa)
         # removed .save(Zonal_Statistics_as_Table)
-        ZonalSt_Califor1 = output_space+f"ZonalSt_Califor1{prev_year_value}_{lat_year_value}"
+        ZonalSt_Califor1 = output_space + f"ZonalSt_Califor1{prev_year_value}_{lat_year_value}"
         Output_Join_Layer = ""
         arcpy.sa.ZonalStatisticsAsTable(California_Counties, "OBJECTID", IDW_CA_PM,
                                         ZonalSt_Califor1, "DATA", "MEAN", "CURRENT_SLICE", [90], "AUTO_DETECT",
                                         "ARITHMETIC", 360, Output_Join_Layer)
 
         # Process: Add Join (2) (Add Join) (management)
-        California_Counties_2_ = arcpy.management.AddJoin(in_layer_or_view=California_Counties_3_, in_field="OBJECTID",
+        # Join the zonal statistics table to the county table
+        California_Counties_Jt = arcpy.management.AddJoin(in_layer_or_view=California_Counties, in_field="OBJECTID",
                                                           join_table=ZonalSt_Califor1, join_field="OBJECTID_1")[0]
 
         # Process: Export Features (Export Features) (conversion)
-        CA_PM_Conc_4_ = output_space+f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
-        arcpy.conversion.ExportFeatures(in_features=California_Counties_2_, out_features=CA_PM_Conc_4_)
+        New_CA_PM_Conc = output_space + f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
+        arcpy.conversion.ExportFeatures(in_features=California_Counties_Jt, out_features=New_CA_PM_Conc)
 
-        arcpy.DeleteField_management(CA_PM_Conc_4_, ["NAME", "NAMELSAD", "MEAN"], "KEEP_FIELDS")
+        arcpy.DeleteField_management(New_CA_PM_Conc, ["NAME", "NAMELSAD", "MEAN"], "KEEP_FIELDS")
+
 
 if __name__ == '__main__':
     # Global Environment settings
