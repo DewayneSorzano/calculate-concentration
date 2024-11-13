@@ -78,10 +78,6 @@ else:
 
         # 4. Save the file with the year included in format
         # CA_PM_YEAR
-        """We will have to write the contents of the file 
-        into a new csv.  Make sure to open the file in
-        the path so it is saved in the same spot as 
-        the unedited files"""
         with open(item, "r") as csv_file2:
             # newline= '' makes it so that when the file is
             # written it will not have erroneous blank spaces
