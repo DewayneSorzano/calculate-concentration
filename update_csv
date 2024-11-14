@@ -18,7 +18,6 @@ Steps
 """
 
 import csv
-import arcpy
 import glob
 
 # 1. Put all the files within the user folder into a list
@@ -47,8 +46,6 @@ else:
               'AQI', 'Name', 'Latitude', 'Longitude']
 
     print("Current files\n" + str(file_names))
-    arcpy.AddMessage("Current files\n" + str(file_names))
-    year_list = []
     # 2. Take 1 file from the list and read it
 
     for item in file_names:
@@ -69,12 +66,9 @@ else:
                 the year"""
                 year = line[0][-4:]
                 print(f"The year of this file is {year}")
-                arcpy.AddMessage(f"The year of this file is {year}")
-                year_list.append(year)
                 # We only need the year once so we break
                 break
             print(f"After looping the year is {year}")
-            arcpy.AddMessage(f"After looping the year is {year}")
 
         # 4. Save the file with the year included in format
         # CA_PM_YEAR
