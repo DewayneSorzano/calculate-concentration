@@ -24,7 +24,7 @@ import glob
 # Place at least 2 of the downloaded EPA files into a folder
 # and add the folder's path to the path variable below
 # example path "C:\\temp\\"
-path = "C:\\temp\\Concentration Project\\Data\\"
+path = "C:\\temp\\Concentration_Project\\Data\\"
 
 # This will get all files within the path that are unedited csv files
 # and put them into a list
