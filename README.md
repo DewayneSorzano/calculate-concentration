@@ -9,7 +9,7 @@ Calc_Concentration_script performs the analysis and creates CA_PM_Conc_YEAR1_YEA
 and CA_PM_ConcYEAR1_YEAR2 (the county file containing the average concentration level under the field name MEAN).  YEAR1 and YEAR2 represent the years the user can either change based on which csv files they downloaded.
 
 Required Data:
-EPA air quality csvs (linked below)
+Two EPA air quality csvs (linked below)
 Shapefile of California counties (linked below)
 
 This script is designed to take PM2.5 data from the Environmental Protection Agency website along with a California shapefile and create a map showcasing the average concentration calculated from two years.   
