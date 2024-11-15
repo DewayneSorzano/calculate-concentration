@@ -53,8 +53,7 @@ else:
         with open(item, "r") as csv_file:
 
             csv_reader = csv.reader(csv_file)
-            # next() allows us to skip the 1st line of the csv file
-            # which is the header
+            # skip the header
             next(csv_reader)
 
             # 3. Get the year from the csv file
