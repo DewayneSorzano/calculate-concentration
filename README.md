@@ -6,7 +6,7 @@ The repository contains three python files, update_csv, Calc_Concentration_scrip
 update_csv's purpose is to take the csv data downloaded from the EPA website (linked below) and prepare it to be worked on in the second script.  
 
 When finished, it will create another csv named CA_PM_YEAR, where YEAR is based on the year the csv represents.
-Calc_Concentration_script performs the analysis and creates CA_PM_Conc_YEAR1_YEAR2Points (The air quality stations that contain the concentration levels under PM_Concentration) 
+Either concentration script performs the analysis and creates CA_PM_Conc_YEAR1_YEAR2Points (The air quality stations that contain the concentration levels under PM_Concentration) 
 and CA_PM_ConcYEAR1_YEAR2 (the county file containing the average concentration level under the field name MEAN).  YEAR1 and YEAR2 represent the years the user can either change based on which csv files they downloaded.
     
 Required Data:
