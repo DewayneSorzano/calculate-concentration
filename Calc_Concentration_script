@@ -1,6 +1,8 @@
 """
 Author: Dewayne Sorzano
 This code should be run after update_csv.py
+Note: If you have a digital elevation model of California
+run Calc_Concentration_script_DEM instead.
 Requirements: A county boundary file of California;
 Two csv files representing two separate years of air quality data from the
 Environmental Protection Agency;
