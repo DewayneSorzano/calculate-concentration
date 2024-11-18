@@ -1,0 +1,255 @@
+"""
+Author: Dewayne Sorzano
+This code should be run after update_csv.py and should only be used
+it the user has a digital elevation model of California.
+Put the name of the DEM model in the function at the last line of the code
+and make sure it is in the geodatabase of the project.
+ex: calc_con(previous_yr_csv, latest_yr_csv, "Name of DEM")
+calc_con(previous_yr_csv, latest_yr_csv, "dem_30m_ca")
+
+Requirements: A county boundary file of the state you want to study;
+2 csv files, 1 for a previous year and the other for any year after the previous year;
+A digital elevation raster file of the state.
+Purpose: This code can be used to calculate the average PM.2.5 concentration of a state from one year to another.
+"""
+
+import arcpy
+import glob
+
+# path should be the same area where the csv files are stored
+path = "C:\\temp\\Concentration_Project\\Data\\"
+output_space = "C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\"
+
+file_names = glob.glob(path + "*CA_PM_*.csv")
+
+# year_list is an empty list that we will use to place all valid years
+# collected from the csv files.  user_chosen is a boolean statement
+# we will use to check if the user has entered a valid year.
+year_list = []
+user_chosen = False
+
+
+# A function that determines if a string can be converted to an int
+# We will use this to determine if the user entered a valid year
+def isInt(string):
+    try:
+        int(string)
+    except ValueError:
+        print(f"{string} cannot be converted to an integer")
+        return False
+    else:
+        return True
+
+
+# Check to see if there are csv files to look through
+if not file_names:
+    print("There are no valid csv files in this folder.")
+
+else:
+    # Iterate through the list of files
+    for item in file_names:
+        year_name = item[-8:-4]
+        year_list.append(year_name)
+
+print(f"Current years available for analysis: {year_list}")
+
+if len(year_list) < 2:
+    print("Please have at least 2 csv files to perform this analysis.")
+
+elif len(year_list) > 2:
+    while not user_chosen:
+        print(f"Which two years would you like to study:\nCurrent years: {year_list}")
+        print("Please type the previous year from the list, then hit enter.  Then do the same for the later year.")
+        user_prev_year = input("Previous Year: ").strip(" ")
+        user_lat_year = input("Later Year: ").strip(" ")
+
+        # Check if either user input is not a value year
+        if not isInt(user_prev_year) or not isInt(user_lat_year):
+            print("Please enter valid years.  Year format: YYYY.")
+
+        # Check if either variable is in the list.
+        elif user_prev_year not in year_list or user_lat_year not in year_list:
+            print("One of the years you have entered is not available.")
+
+        # Check if user inputted the same year
+        elif int(user_prev_year) == int(user_lat_year):
+            print("Please input two different years.")
+
+        else:
+            # Check if user inputted the years in the wrong order
+            print(f"User entered for previous year: {user_prev_year}"
+                  f" and for later year: {user_lat_year}")
+            user_chosen = True
+            if int(user_prev_year) > int(user_lat_year):
+                # Change the years to match format
+                new_user_prev_year = user_lat_year
+                new_user_lat_year = user_prev_year
+
+                user_prev_year = new_user_prev_year
+                user_lat_year = new_user_lat_year
+                print("Changed years to match format")
+
+    print(f"Previous Year {user_prev_year} and Latest Year {user_lat_year}")
+
+    prev_year_value = user_prev_year
+    lat_year_value = user_lat_year
+
+# If there are only 2 entries in year_list,
+# then set the values accordingly.
+else:
+    year1 = year_list[0]
+    year2 = year_list[1]
+
+    if int(year1) > int(year2):
+        prev_year_value = year2
+        lat_year_value = year1
+    else:
+        prev_year_value = year1
+        lat_year_value = year2
+
+# Now to perform the analysis
+# Set these two variables to reference the csv files.
+previous_yr_csv = path + f"CA_PM_{prev_year_value}.csv"
+latest_yr_csv = path + f"CA_PM_{lat_year_value}.csv"
+
+
+# Place the work within a function
+def calc_con(Previous_Year, Latest_Year,Digital_Elevation_Model):
+    arcpy.env.overwriteOutput = True
+
+    # Check out any necessary licenses.
+    arcpy.CheckOutExtension("spatial")
+    arcpy.CheckOutExtension("3D")
+    arcpy.CheckOutExtension("ImageExt")
+    arcpy.CheckOutExtension("ImageAnalyst")
+
+    arcpy.ImportToolbox(r"c:\program files\arcgis\pro\Resources\ArcToolbox\toolboxes\Data Management Tools.tbx")
+    California_Counties = "California_Counties"
+
+    try:
+        # Export the table prepared from update_csv for the previous year.
+        print("Performing analysis...")
+        CA_prev_ET = output_space + f"CA_PM_{prev_year_value}_Table"
+
+        print(f"Converting {previous_yr_csv} to a table")
+        arcpy.conversion.ExportTable(
+            in_table=Previous_Year,
+            out_table=CA_prev_ET)
+
+        # Convert the mean concentration values for the year and
+        # categorize it by the air quality station name.
+        print(f"Summarizing statistics for {CA_prev_ET}")
+        CA_prev_ES = output_space + f"CA_PM_{prev_year_value}_Statistics"
+        arcpy.analysis.Statistics(in_table=CA_prev_ET, out_table=CA_prev_ES,
+                                  statistics_fields=[["Concentration", "MEAN"], ["Latitude", "MEAN"],
+                                                     ["Longitude", "MEAN"]], case_field=["Name"])
+
+        # Perform the same process for the later year.
+        print(f"Converting {latest_yr_csv} to a table")
+        CA_lat_ET = output_space + f"CA_PM_{lat_year_value}_Table"
+        arcpy.conversion.ExportTable(
+            in_table=Latest_Year,
+            out_table=CA_lat_ET)
+
+        print(f"Summarizing statistics for {CA_lat_ET}")
+        CA_lat_ES = output_space + f"CA_PM_{lat_year_value}_Statistics"
+        arcpy.analysis.Statistics(in_table=CA_lat_ET, out_table=CA_lat_ES,
+                                  statistics_fields=[["Concentration", "MEAN"], ["Latitude", "MEAN"],
+                                                     ["Longitude", "MEAN"]], case_field=["Name"])
+
+        # Join the 2 tables together.
+        print(f"Joining {CA_prev_ES} and {CA_lat_ES}")
+        CA_prev_Jt = \
+            arcpy.management.AddJoin(in_layer_or_view=CA_prev_ES, in_field="Name",
+                                     join_table=CA_lat_ES, join_field="Name")
+
+        # Then export the joined table.
+        print("Exporting table...")
+        CA_Conc = output_space + f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
+        arcpy.conversion.ExportTable(in_table=CA_prev_Jt, out_table=CA_Conc)
+
+        # Add the concentration field to the table and calculate it.
+        print(f"Adding PM_Concentration field to {CA_Conc}.")
+        CA_PM = arcpy.management.AddField(in_table=CA_Conc, field_name="PM_Concentration", field_type="DOUBLE")
+
+        print(f"Calculating PM_Concentration field.")
+        CA_PM_Cf = arcpy.management.CalculateField(in_table=CA_PM, field="PM_Concentration",
+                                                   expression=
+                                                   "(!MEAN_Concentration! + !MEAN_Concentration_1!)   / 2")
+
+        # Remove the irrelevant fields and keep the new PM_Concentration field.
+        print("Removing unnecessary fields.")
+        CA_PM_Df = arcpy.management.DeleteField(in_table=CA_PM_Cf,
+                                                drop_field=["FREQUENCY", "MEAN_Concentration", "OBJECTID_1",
+                                                            "Name_1", "FREQUENCY_1",
+                                                            "MEAN_Concentration_1", "MEAN_Latitude_1",
+                                                            "MEAN_Longitude_1"])
+
+        # Create point features based on the air quality stations.
+        Output_Feature_Class = output_space + f"CA_PM_Conc_{prev_year_value}_{lat_year_value}Points"
+        print(f"Creating final air quality station data as {Output_Feature_Class}.")
+        arcpy.management.XYTableToPoint(in_table=CA_PM_Df,
+                                                                    out_feature_class=Output_Feature_Class,
+                                                                    x_field="MEAN_Longitude",
+                                                                    y_field="MEAN_Latitude",
+                                                                    coordinate_system="GEOGCS[\"GCS_WGS_1984\","
+                                                                                      "DATUM[\"D_WGS_1984\", "
+                                                                                      "SPHEROID[\"WGS_1984\",6378137.0,"
+                                                                                      "298.257223563]], "
+                                                                                      "PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\","
+                                                                                      "0.0174532925199433]]; "
+                                                                                      "-400 -400 1000000000;-100000 10000;-100000 "
+                                                                                      "10000; "
+                                                                                      "8.98315284119521E-09;0.001;0.001"
+                                                                                      ";IsHighPrecision")
+
+        CA_PM_Conc_XYTableToPoint = arcpy.sa.ExtractMultiValuesToPoints(Output_Feature_Class,
+                                                                        [[Digital_Elevation_Model, "Elevation"]],
+                                                                        "NONE")
+
+        # Create the Inverse Distance Weighting File using the PM_Concentration
+        # collected from the air quality station point features.
+        IDW_CA_PM = output_space + f"IDWCA{prev_year_value}_{lat_year_value}"
+        print(f"Creating IDW as {IDW_CA_PM}.")
+        IDW = IDW_CA_PM
+        with arcpy.EnvManager(
+                mask=output_space + "California_Counties"):
+            IDW_CA_PM = arcpy.sa.Idw(CA_PM_Conc_XYTableToPoint, "PM_Concentration", "3.48816000000002E-02", 2,
+                                     "VARIABLE 12", "")
+            IDW_CA_PM.save(IDW)
+
+        # Use the IDW file for Zonal Statistics to be combined with the county shapefile.
+        ZonalSt_Califor1 = output_space + f"ZonalSt_Califor1{prev_year_value}_{lat_year_value}"
+        Output_Join_Layer = ""
+        print(f"Creating zonal statistics table as {ZonalSt_Califor1}.")
+        arcpy.sa.ZonalStatisticsAsTable(California_Counties, "OBJECTID", IDW_CA_PM,
+                                        ZonalSt_Califor1, "DATA", "MEAN", "CURRENT_SLICE", [90], "AUTO_DETECT",
+                                        "ARITHMETIC", 360, Output_Join_Layer)
+
+        # Join the newly created table to the county shapefile.
+        print(f"Joining newly created table to {California_Counties}.")
+        California_Counties_Join = \
+            arcpy.management.AddJoin(in_layer_or_view=California_Counties, in_field="OBJECTID",
+                                     join_table=ZonalSt_Califor1, join_field="OBJECTID_1")
+
+        # Export the shapefile.
+        New_CA_PM_Conc = output_space + f"CA_PM_Conc{prev_year_value}_{lat_year_value}"
+        print("Exporting the county file.")
+        arcpy.conversion.ExportFeatures(in_features=California_Counties_Join, out_features=New_CA_PM_Conc)
+
+        print("Removing unnecessary fields from county file.")
+        arcpy.DeleteField_management(New_CA_PM_Conc, ["NAME", "NAMELSAD", "MEAN"], "KEEP_FIELDS")
+
+        print(f"Script finished..."
+              f"\nPlease view {New_CA_PM_Conc} and\n{Output_Feature_Class}\nto see your results.")
+
+    except Exception as x:
+        print(f"Error, script failed to run. \n Error: {x}")
+
+
+if __name__ == '__main__':
+    # Global Environment settings
+    with arcpy.EnvManager(
+            scratchWorkspace="C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\",
+            workspace="C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\"):
+        calc_con(previous_yr_csv, latest_yr_csv, "dem_30m_ca")
