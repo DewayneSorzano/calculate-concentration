@@ -248,7 +248,7 @@ def calc_con(Previous_Year, Latest_Year):
 if __name__ == '__main__':
     # Global Environment settings
     with arcpy.EnvManager(
-            scratchWorkspace="C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\",
-            workspace="C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\"):
+            scratchWorkspace=output_space,
+            workspace= output_space):
         calc_con(previous_yr_csv, latest_yr_csv)
 
