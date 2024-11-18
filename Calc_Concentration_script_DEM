@@ -59,7 +59,8 @@ if len(year_list) < 2:
 elif len(year_list) > 2:
     while not user_chosen:
         print(f"Which two years would you like to study:\nCurrent years: {year_list}")
-        print("Please type the previous year from the list, then hit enter.  Then do the same for the later year.")
+        print("Please type the previous year you would like to study"
+              "from the list, then hit enter.  Then do the same for the later year.")
         user_prev_year = input("Previous Year: ").strip(" ")
         user_lat_year = input("Later Year: ").strip(" ")
 
@@ -250,6 +251,6 @@ def calc_con(Previous_Year, Latest_Year,Digital_Elevation_Model):
 if __name__ == '__main__':
     # Global Environment settings
     with arcpy.EnvManager(
-            scratchWorkspace="C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\",
-            workspace="C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\"):
+            scratchWorkspace=output_space,
+            workspace=output_space):
         calc_con(previous_yr_csv, latest_yr_csv, "dem_30m_ca")
