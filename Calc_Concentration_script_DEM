@@ -1,6 +1,6 @@
 """
 Author: Dewayne Sorzano
-This code should be run after update_csv.py and should only be used
+Note: This code should be run after update_csv.py and should only be used
 it the user has a digital elevation model of California.
 Put the name of the DEM model in the function at the last line of the code
 and make sure it is in the geodatabase of the project.
