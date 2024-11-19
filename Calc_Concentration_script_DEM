@@ -18,6 +18,7 @@ import glob
 path = "C:\\temp\\Concentration_Project\\Data\\"
 output_space = "C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\"
 
+# User can change the value of dem to be the name of the digital elevation model that they have.
 dem = "dem_30m_ca"
 
 file_names = glob.glob(path + "*CA_PM_*.csv")
@@ -126,10 +127,10 @@ def calc_con(Previous_Year, Latest_Year,Digital_Elevation_Model):
 
     arcpy.ImportToolbox(r"c:\program files\arcgis\pro\Resources\ArcToolbox\toolboxes\Data Management Tools.tbx")
     California_Counties = "California_Counties"
+    print("Performing analysis...")
 
     try:
         # Export the table prepared from update_csv for the previous year.
-        print("Performing analysis...")
         CA_prev_ET = output_space + f"CA_PM_{prev_year_value}_Table"
 
         print(f"Converting {previous_yr_csv} to a table")
