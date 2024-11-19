@@ -2,12 +2,10 @@
 Author: Dewayne Sorzano
 Note: This code should be run after update_csv.py and should only be used
 it the user has a digital elevation model of California.
-Put the name of the DEM model in the function at the last line of the code
-and make sure it is in the geodatabase of the project.
-ex: calc_con(previous_yr_csv, latest_yr_csv, "Name of DEM")
-calc_con(previous_yr_csv, latest_yr_csv, "dem_30m_ca")
+Change the value of the variable dem to the name of your specific DEM.  Make sure it it is in the file geodatabase
+of your project
 
-Requirements: A county boundary file of the state you want to study;
+Requirements: A county boundary file of California;
 2 csv files, 1 for a previous year and the other for any year after the previous year;
 A digital elevation raster file of the state.
 Purpose: This code can be used to calculate the average PM.2.5 concentration of a state from one year to another.
@@ -19,6 +17,8 @@ import glob
 # path should be the same area where the csv files are stored
 path = "C:\\temp\\Concentration_Project\\Data\\"
 output_space = "C:\\temp\\Concentration_Project\\Air Pollutant Concentration.gdb\\"
+
+dem = "dem_30m_ca"
 
 file_names = glob.glob(path + "*CA_PM_*.csv")
 
@@ -253,4 +253,4 @@ if __name__ == '__main__':
     with arcpy.EnvManager(
             scratchWorkspace=output_space,
             workspace=output_space):
-        calc_con(previous_yr_csv, latest_yr_csv, "dem_30m_ca")
+        calc_con(previous_yr_csv, latest_yr_csv, dem)
