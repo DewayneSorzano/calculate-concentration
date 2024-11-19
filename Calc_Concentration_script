@@ -127,10 +127,10 @@ def calc_con(Previous_Year, Latest_Year):
 
     arcpy.ImportToolbox(r"c:\program files\arcgis\pro\Resources\ArcToolbox\toolboxes\Data Management Tools.tbx")
     California_Counties = "California_Counties"
+    print("Performing analysis...")
 
     try:
         # Export the table prepared from update_csv for the previous year.
-        print("Performing analysis...")
         CA_prev_ET = output_space + f"CA_PM_{prev_year_value}_Table"
 
         print(f"Converting {previous_yr_csv} to a table")
