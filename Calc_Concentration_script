@@ -8,8 +8,6 @@ Two csv files representing two separate years of air quality data from the
 Environmental Protection Agency;
 
 Purpose: This code can be used to calculate the average PM.2.5 concentration of a California from one year to another.
-Note: By default previous_yr_csv and lat_year_value are 2018 and 2019 but the user can put whichever two years they 
-would like to study as long as they have the respective csv file from EPA.
 """
 
 
